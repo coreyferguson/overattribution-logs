@@ -1,0 +1,15 @@
+{
+  "name": "overattribution-logs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "./node_modules/.bin/sls deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^1.44.1"
+  }
+}

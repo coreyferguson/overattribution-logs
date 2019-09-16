@@ -1,0 +1,80 @@
+
+service: overattribution-logs
+
+frameworkVersion: '=1.44.1'
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: ${opt:stage, env:stage, 'prod'}
+  region: us-west-2
+
+resources:
+  Resources:
+
+    ElasticSearchDomain:
+      Type: AWS::Elasticsearch::Domain
+      Properties:
+        AccessPolicies:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: '*'
+              Action: es:*
+              Resource: arn:aws:es:us-west-2:863138142000:domain/overattribution-logs/*
+              Condition:
+                IpAddress:
+                  aws:SourceIp: 64.85.242.101
+        AdvancedOptions:
+          rest.action.multi.allow_explicit_index: true
+        DomainName: overattribution-logs
+        EBSOptions:
+          EBSEnabled: true
+          VolumeType: gp2
+          VolumeSize: 10
+        ElasticsearchClusterConfig:
+          DedicatedMasterCount: 3
+          DedicatedMasterEnabled: true
+          DedicatedMasterType: r5.large.elasticsearch
+          InstanceCount: 3
+          InstanceType: r5.large.elasticsearch
+          ZoneAwarenessConfig:
+              AvailabilityZoneCount: 3
+          ZoneAwarenessEnabled: true
+        ElasticsearchVersion: 7.1
+        EncryptionAtRestOptions:
+          Enabled: false
+        NodeToNodeEncryptionOptions:
+          Enabled: false
+        SnapshotOptions:
+          AutomatedSnapshotStartHour: 0
+
+    LambdaIAMExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        MaxSessionDuration: 3600
+        Path: /
+        Policies:
+          - PolicyName: overattribution-logs
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - arn:aws:logs:*:*:*
+                - Effect: Allow
+                  Action: es:*
+                  Resource: arn:aws:es:us-west-2:863138142000:domain/overattribution-logs/*
+        RoleName: overattribution-logs-execution-role
